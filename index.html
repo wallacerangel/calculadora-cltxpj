@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Impostos</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: #3498db;
+            color: white;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e67e22;
+        }
+
+        button {
+            background-color: #e67e22;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #d35400;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculadora de Impostos</h1>
+    <form id="calculator-form">
+        <table>
+            <tr>
+                <th>Campos</th>
+                <th>Entradas</th>
+            </tr>
+            <tr>
+                <td><label for="salario">Salário Desejado (R$):</label></td>
+                <td><input type="number" id="salario" required></td>
+            </tr>
+            <tr>
+                <td><label for="prolabore">Pró-Labore Desejado (R$):</label></td>
+                <td><input type="number" id="prolabore" required></td>
+            </tr>
+            <tr>
+                <td><label for="faturamento">Faturamento Desejado (R$):</label></td>
+                <td><input type="number" id="faturamento" required></td>
+            </tr>
+            <tr>
+                <td><label for="cnae">CNAE (Código):</label></td>
+                <td><input type="text" id="cnae" required></td>
+            </tr>
+            <tr>
+                <td><label for="operacao">Operação:</label></td>
+                <td>
+                    <select id="operacao" required>
+                        <option value="brasil">Brasil</option>
+                        <option value="exterior">Exterior</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <button type="button" id="calcular">Calcular Impostos</button>
+    </form>
+
+    <h2>Resultados:</h2>
+    <div id="resultado"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("calculator-form");
+            const calcularButton = document.getElementById("calcular");
+            const resultadoDiv = document.getElementById("resultado");
+
+            calcularButton.addEventListener("click", function () {
+                const salario = parseFloat(document.getElementById("salario").value);
+                const prolabore = parseFloat(document.getElementById("prolabore").value);
+                const faturamento = parseFloat(document.getElementById("faturamento").value);
+                const cnae = document.getElementById("cnae").value;
+                const operacao = document.getElementById("operacao").value;
+
+                // Cálculos dos impostos
+                const descontoINSS = calcularINSS(salario);
+                const descontoIRPF = calcularIRPF(salario);
+                const valorFGTS = calcularFGTS(prolabore);
+                const impostoAPagar = calcularImposto(faturamento, cnae, operacao);
+                const valorIOF = calcularIOF(faturamento, operacao);
+
+                // Exibir resultados
+                resultadoDiv.innerHTML = `
+                    <p>Desconto de INSS: R$ ${descontoINSS.toFixed(2)}</p>
+                    <p>Desconto de IRPF: R$ ${descontoIRPF.toFixed(2)}</p>
+                    <p>Valor do FGTS: R$ ${valorFGTS.toFixed(2)}</p>
+                    <p>Imposto a Pagar: R$ ${impostoAPagar.toFixed(2)}</p>
+                    <p>Valor de IOF a Pagar: R$ ${valorIOF.toFixed(2)}</p>
+                `;
+            });
+        });
+
+        // Funções de cálculo
+        function calcularINSS(salario) {
+            // Implemente o cálculo do desconto de INSS com base na tabela
+            // Atualize a tabela conforme necessário
+            const tabelaINSS = [
+                { limite: 1045, aliquota: 0.075 },
+                { limite: 2089.6, aliquota: 0.09 },
+                { limite: 3134.4, aliquota: 0.12 },
+                { limite: 6101.06, aliquota: 0.14 },
+            ];
+
+            let desconto = 0;
+            for (const faixa of tabelaINSS) {
+                if (salario <= faixa.limite) {
+                    desconto += salario * faixa.aliquota;
+                    break;
+                } else {
+                    desconto += faixa.limite * faixa.aliquota;
+                    salario -= faixa.limite;
+                }
+            }
+
+            return desconto;
+        }
+
+        function calcularIRPF(salario) {
+            // Implemente o cálculo do desconto de IRPF com base na tabela
+            // Atualize a tabela conforme necessário
+            const tabelaIRPF = [
+                { limite: 1903.98, aliquota: 0, deducao: 0 },
+                { limite: 2826.65, aliquota: 0.075, deducao: 142.8 },
+                { limite: 3751.05, aliquota: 0.15, deducao: 354.8 },
+                { limite: 4664.68, aliquota: 0.225, deducao: 636.13 },
+                { limite: Infinity, aliquota: 0.275, deducao: 869.36 },
+            ];
+
+            let desconto = 0;
+            for (const faixa of tabelaIRPF) {
+                if (salario <= faixa.limite) {
+                    desconto += salario * faixa.aliquota - faixa.deducao;
+                    break;
+                } else {
+                    desconto += (faixa.limite - faixa.deducao) * faixa.aliquota;
+                    salario -= faixa.limite;
+                }
+            }
+
+            return desconto;
+        }
+
+        function calcularFGTS(prolabore) {
+            // Implemente o cálculo do valor do FGTS
+            const aliquotaFGTS = 0.08;
+            return prolabore * aliquotaFGTS;
+        }
+
+        function calcularImposto(faturamento, cnae, operacao) {
+            // Implemente o cálculo do imposto com base no faturamento, CNAE e operação
+            // Use as tabelas do Simples Nacional e aplique o fator R
+            // Atualize as tabelas conforme necessário
+            let aliquotaSimplesNacional = 0.04;
+
+            if (operacao === "exterior") {
+                aliquotaSimplesNacional = 0.06;
+            }
+
+            // Exemplo de redução de alíquota para algumas atividades
+            if (cnae === "1234") {
+                aliquotaSimplesNacional *= 0.8;
+            }
+
+            const imposto = faturamento * aliquotaSimplesNacional;
+            return imposto;
+        }
+
+        function calcularIOF(faturamento, operacao) {
+            // Implemente o cálculo do valor de IOF
+            // Atualize as regras conforme necessário
+            if (operacao === "exterior") {
+                const aliquotaIOF = 0.02;
+                return faturamento * aliquotaIOF;
+            } else {
+                return 0;
+            }
+        }
+    </script>
+</body>
+</html>
